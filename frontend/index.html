@@ -20,9 +20,14 @@
 
         <aside id="sidebar-navigation" class="w-[260px] bg-[#111424] text-slate-300 flex flex-col h-full shrink-0 z-20">
             <div class="p-6 flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <div class="w-4 h-4 bg-white/20 rounded-full backdrop-blur-sm"></div>
+                <div id="mode-toggle" class="relative w-14 h-8 bg-slate-700 rounded-full cursor-pointer transition-colors shrink-0">
+                    <div id="toggle-circle" class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center transition-all">
+                        <img id="toggle-icon" src="https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png" class="w-4 h-4">
+                    </div>
                 </div>
+                <!-- <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <div class="w-4 h-4 bg-white/20 rounded-full backdrop-blur-sm"></div>
+                </div> -->
                 <div>
                     <div class="text-white font-bold text-lg tracking-tight leading-tight">MindFlow</div>
                     <div class="text-[11px] text-slate-400 font-medium mt-0.5">Джедайские техники</div>
@@ -80,7 +85,7 @@
                     <div class="relative group">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"></i>
                         <input type="text" placeholder="Быстрый поиск..." class="pl-10 pr-4 py-2.5 bg-white border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-[280px] shadow-sm transition-all placeholder:text-slate-400 text-slate-700">
-                    </div>
+                    </div>                    
                     <button id="add-task-btn-main" class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-sm shadow-indigo-600/20">
                         <i class="fa-solid fa-plus text-xs"></i> Добавить
                     </button>

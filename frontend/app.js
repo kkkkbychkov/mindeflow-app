@@ -4,6 +4,7 @@ const API_URL = "http://localhost:8080/api/v1";
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
     loadUserData(); 
+    initToggle();
 });
 
 async function initApp() {
@@ -117,4 +118,33 @@ function updateUI() {
             count === 0 ? emptyState.classList.remove('hidden') : emptyState.classList.add('hidden');
         }
     }
+}
+
+// ===== Переключатель "обезьяна / умный тип" =====
+function initToggle() {
+    const toggle = document.getElementById('mode-toggle');
+    const circle = document.getElementById('toggle-circle');
+    const icon = document.getElementById('toggle-icon');
+
+    let isSmart = false;
+
+    toggle.onclick = () => {
+        isSmart = !isSmart;
+
+        if (isSmart) {
+            // вправо (умный тип)
+            circle.style.transform = "translateX(28px)";
+            toggle.classList.remove("bg-slate-200");
+            toggle.classList.add("bg-indigo-500");
+
+            icon.src = "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
+        } else {
+            // влево (обезьяна)
+            circle.style.transform = "translateX(0px)";
+            toggle.classList.remove("bg-indigo-500");
+            toggle.classList.add("bg-slate-200");
+
+            icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
+        }
+    };
 }
