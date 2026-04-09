@@ -1,10 +1,12 @@
 // ===== Конфигурация =====
 const API_URL = "http://localhost:8080/api/v1";
+let isSmartMode = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
     loadUserData(); 
     initToggle();
+    applyMode();
 });
 
 async function initApp() {
@@ -63,7 +65,17 @@ function addInboxItem(text) {
     `;
 
     // Кнопка перемещения в Tasks
+    // div.querySelector('.action-process').onclick = () => {
+    //     div.remove();
+    //     moveToTasks(text);
+    //     updateUI();
+    // };
     div.querySelector('.action-process').onclick = () => {
+        if (!isSmartMode) {
+            alert("🐒 В режиме обезьяны нельзя обрабатывать задачи!");
+            return;
+        }
+
         div.remove();
         moveToTasks(text);
         updateUI();
@@ -93,13 +105,26 @@ function moveToTasks(text) {
     `;
 
     // Кнопка "Готово" (просто удаляем задачу)
+    // div.querySelector('.action-done').onclick = () => {
+    //     div.classList.add('opacity-0', 'scale-95');
+    //     setTimeout(() => {
+    //         div.remove();
+    //         updateUI();
+    //     }, 200);
+    // };
     div.querySelector('.action-done').onclick = () => {
+        if (!isSmartMode) {
+            alert("🐒 Сначала стань умнее 😄");
+            return;
+        }
+
         div.classList.add('opacity-0', 'scale-95');
         setTimeout(() => {
             div.remove();
             updateUI();
         }, 200);
     };
+    
 
     tasksContainer.prepend(div);
 }
@@ -126,15 +151,20 @@ function initToggle() {
     const circle = document.getElementById('toggle-circle');
     const icon = document.getElementById('toggle-icon');
 
-    let isSmart = false;
+    isSmartMode = false;
+    circle.style.transform = "translateX(0px)";
+    toggle.classList.add("bg-slate-700");
+    toggle.classList.remove("bg-indigo-500");
+    icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
+    applyMode();
 
     toggle.onclick = () => {
-        isSmart = !isSmart;
+        isSmartMode = !isSmartMode;
 
-        if (isSmart) {
+        if (isSmartMode) {
             // вправо (умный тип)
             circle.style.transform = "translateX(28px)";
-            toggle.classList.remove("bg-slate-200");
+            toggle.classList.remove("bg-slate-700");
             toggle.classList.add("bg-indigo-500");
 
             icon.src = "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
@@ -146,5 +176,42 @@ function initToggle() {
 
             icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
         }
+
+        applyMode();
     };
+
+    function applyMode() {
+        const tasksList = document.getElementById('tasks-list');
+        const navTasks = document.getElementById('nav-tasks');
+        const navProjects = document.getElementById('nav-projects');
+        const cardTasks = document.getElementById('card-tasks');
+        const cardProjects = document.getElementById('card-projects');
+
+        if (!isSmartMode) {
+            // скрываем вкладки
+            if (navTasks) navTasks.style.display = "none";
+            if (navProjects) navProjects.style.display = "none";
+
+            // скрываем карточки
+            if (cardTasks) cardTasks.style.display = "none";
+            if (cardProjects) cardProjects.style.display = "none";
+
+            if (tasksList) {
+                tasksList.style.opacity = "0.4";
+                tasksList.style.pointerEvents = "none";
+            }
+
+        } else {
+            if (navTasks) navTasks.style.display = "";
+            if (navProjects) navProjects.style.display = "";
+
+            if (cardTasks) cardTasks.style.display = "";
+            if (cardProjects) cardProjects.style.display = "";
+
+            if (tasksList) {
+                tasksList.style.opacity = "1";
+                tasksList.style.pointerEvents = "auto";
+            }
+        }
+    }
 }
