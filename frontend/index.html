@@ -37,49 +37,65 @@
             <header class="top-bar">
                 <h1 id="header-title" class="page-title">Загрузка...</h1>
                 <div class="top-bar-actions">
-                    <div class="search-box">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Быстрый поиск..." class="search-input">
-                    </div>
                     <button id="add-task-btn-main" class="btn-primary">
-                        <i class="fa-solid fa-plus"></i> Добавить
+                        <i class="fa-solid fa-plus text-xs"></i> Добавить
                     </button>
                 </div>
             </header>
 
             <div class="scroll-area">
-                <section class="content-grid">
+                <div class="content-grid">
                     <div class="col-main">
                         <section class="card">
                             <div class="card-header">
                                 <div>
-                                    <h3 class="card-title">Inbox</h3>
-                                    <p class="card-subtitle">Входящий поток задач</p>
+                                    <h3 class="card-title text-xl font-bold">Inbox</h3>
+                                    <p class="card-subtitle text-sm text-slate-500">Поток входящих задач</p>
                                 </div>
-                                <button id="add-to-inbox-btn" class="btn-secondary">Добавить</button>
+                                <button id="add-to-inbox-btn" class="btn-secondary">
+                                    Добавить
+                                </button>
                             </div>
+
+                            <div id="monkey-action-area" class="monkey-module">
+                                <button id="get-task-monkey" class="btn-monkey">
+                                    <i class="fa-solid fa-bolt-lightning"></i> Дай задачу
+                                </button>
+                                
+                                <div id="active-monkey-task-card" class="focus-task-card hidden">
+                                    <div class="focus-content">
+                                        <span class="focus-badge">ТЕКУЩИЙ ФОКУС</span>
+                                        <div id="monkey-task-text" class="focus-text"></div>
+                                    </div>
+                                    <button id="complete-monkey-task" class="btn-complete-focus">
+                                        Готово
+                                    </button>
+                                </div>
+                            </div>
+
                             <div id="inbox-list" class="task-list"></div>
+                            
                             <div id="inbox-empty-state" class="empty-state hidden">
-                                <p>Inbox пуст 🎉</p>
+                                <p>Входящих задач нет 🎉</p>
                             </div>
                         </section>
                     </div>
 
                     <div class="col-side">
                         <section id="card-tasks" class="card">
-                            <h3 class="card-title mb-4">В работе</h3>
+                            <h3 class="card-title text-lg font-bold mb-4">В работе</h3>
                             <div id="tasks-list"></div>
                         </section>
 
                         <section id="card-projects" class="card">
-                            <h3 class="card-title mb-4">Проекты</h3>
-                            <div class="project-item">
-                                <h4 class="project-name">Разработка MindFlow</h4>
-                                <p class="project-status">Статус: <span class="status-active">Активен</span></p>
+                            <h3 class="card-title text-lg font-bold mb-4">Проекты</h3>
+                            <div class="project-card">
+                                <h4 class="font-bold text-slate-800">Разработка MindFlow</h4>
+                                <p class="text-xs text-slate-500 mt-1 italic">Статус: В активной фазе</p>
                             </div>
                         </section>
                     </div>
-                </section>
+                </div>
             </div>
         </main>
     </div>

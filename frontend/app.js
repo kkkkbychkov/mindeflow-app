@@ -1,56 +1,41 @@
 /**
- * MindFlow Core Logic
- * Senior Frontend Approach: State-driven UI, Default Hidden Modules
+ * MindFlow Core
+ * State Management & Monkey Mode Logic
  */
 
-const API_URL = "http://localhost:8080/api/v1";
-
-// Состояние приложения
 const state = {
-    isSmartMode: false, // Изначально выключено
+    isSmartMode: false,
     inbox: [],
     tasks: [],
-    userName: "UserName"
+    currentFocus: null, // Задача, взятая через "Дай задачу"
+    userName: "Дмитрий"
 };
 
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
-    loadUserData();
 });
 
 function initApp() {
-    // Регистрация событий
-    const actions = {
-        'add-task-btn-main': promptAddTask,
-        'add-to-inbox-btn': promptAddTask,
-        'mode-toggle': toggleSmartMode
-    };
-
-    Object.entries(actions).forEach(([id, fn]) => {
-        const el = document.getElementById(id);
-        if (el) el.onclick = fn;
+    // Регистрация оригинальных кнопок добавления
+    const addActions = ['add-task-btn-main', 'add-to-inbox-btn'];
+    addActions.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.onclick = handleAddNewTask;
     });
 
-    // Устанавливаем начальную видимость
-    applyModeVisibility();
+    // Регистрация управления режимом
+    document.getElementById('mode-toggle').onclick = toggleAppMode;
+
+    // Регистрация логики "Обезьяны"
+    document.getElementById('get-task-monkey').onclick = takeTaskForFocus;
+    document.getElementById('complete-monkey-task').onclick = finishFocusTask;
+
+    applyInitialVisibility();
     render();
 }
 
-async function loadUserData() {
-    try {
-        const res = await fetch(`${API_URL}/user`);
-        if (res.ok) {
-            const data = await res.json();
-            state.userName = data.full_name;
-        }
-    } catch (e) {
-        console.log("Using fallback user data");
-    }
-    const titleEl = document.getElementById('header-title');
-    if (titleEl) titleEl.textContent = `Доброго времени суток, ${state.userName}!`;
-}
-
-function promptAddTask() {
+// Оригинальная логика добавления (через prompt)
+function handleAddNewTask() {
     const text = prompt("Опишите задачу:");
     if (text?.trim()) {
         state.inbox.push(text.trim());
@@ -58,81 +43,101 @@ function promptAddTask() {
     }
 }
 
-function toggleSmartMode() {
-    state.isSmartMode = !state.isSmartMode;
-    applyModeVisibility();
+// Логика "Дай задачу"
+function takeTaskForFocus() {
+    if (state.currentFocus) return; // Блокировка, если задача уже в работе
+    
+    if (state.inbox.length === 0) {
+        alert("Входящие пусты! Сначала добавьте задачу.");
+        return;
+    }
+
+    // Извлекаем ПЕРВУЮ задачу из списка (FIFO)
+    state.currentFocus = state.inbox.shift();
+    render();
 }
 
-function applyModeVisibility() {
+function finishFocusTask() {
+    state.currentFocus = null;
+    render();
+}
+
+function toggleAppMode() {
+    state.isSmartMode = !state.isSmartMode;
+    applyInitialVisibility();
+    render();
+}
+
+function applyInitialVisibility() {
+    const isSmart = state.isSmartMode;
     const toggle = document.getElementById('mode-toggle');
     const circle = document.getElementById('toggle-circle');
     const icon = document.getElementById('toggle-icon');
     
-    // Элементы, которыми управляем
-    const modules = ['nav-tasks', 'nav-projects', 'card-tasks', 'card-projects'];
+    // Переключаем визуальное состояние тоггла
+    toggle.classList.toggle('bg-indigo-600', isSmart);
+    toggle.classList.toggle('bg-slate-700', !isSmart);
+    circle.style.transform = isSmart ? "translateX(24px)" : "translateX(0px)";
+    icon.src = isSmart 
+        ? "https://cdn-icons-png.flaticon.com/512/4140/4140048.png" 
+        : "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
 
-    if (state.isSmartMode) {
-        toggle.className = "toggle-bg bg-indigo-600";
-        circle.style.transform = "translateX(24px)";
-        icon.src = "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
-    } else {
-        toggle.className = "toggle-bg bg-slate-700";
-        circle.style.transform = "translateX(0px)";
-        icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
-    }
-
-    modules.forEach(id => {
+    // Управляем модулями
+    const smartModules = ['nav-tasks', 'nav-projects', 'card-tasks'];
+    smartModules.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.classList.toggle('hidden', !state.isSmartMode);
+        if (el) el.classList.toggle('hidden', !isSmart);
     });
 
-    const tasksList = document.getElementById('tasks-list');
-    if (tasksList) {
-        tasksList.style.opacity = state.isSmartMode ? "1" : "0.4";
-        tasksList.style.pointerEvents = state.isSmartMode ? "auto" : "none";
-    }
+    // Модуль "Обезьяны" виден только в обычном режиме
+    const monkeyModule = document.getElementById('monkey-action-area');
+    if (monkeyModule) monkeyModule.classList.toggle('hidden', isSmart);
 }
 
 function render() {
     const inboxList = document.getElementById('inbox-list');
-    const tasksList = document.getElementById('tasks-list');
     const badge = document.getElementById('sidebar-inbox-count');
+    const getTaskBtn = document.getElementById('get-task-monkey');
+    const focusCard = document.getElementById('active-monkey-task-card');
+    const focusText = document.getElementById('monkey-task-text');
     const emptyState = document.getElementById('inbox-empty-state');
 
-    if (inboxList) {
-        inboxList.innerHTML = state.inbox.map((item, idx) => `
-            <div class="task-row">
-                <span class="font-medium">${item}</span>
-                <button onclick="processToTask(${idx})" class="btn-process">Обработать</button>
-            </div>
-        `).join('');
+    // Обновляем список Inbox
+    inboxList.innerHTML = state.inbox.map((task, idx) => `
+        <div class="flex items-center justify-between py-4 border-b border-slate-50 last:border-0">
+            <span class="text-slate-700 font-medium">${task}</span>
+            ${state.isSmartMode ? `<button onclick="moveToWork(${idx})" class="btn-secondary text-xs">В работу</button>` : ''}
+        </div>
+    `).join('');
+
+    // Управление состоянием "Дай задачу"
+    if (state.currentFocus) {
+        getTaskBtn.disabled = true;
+        getTaskBtn.textContent = "Задача выбрана";
+        focusCard.classList.remove('hidden');
+        focusText.textContent = state.currentFocus;
+    } else {
+        getTaskBtn.disabled = false;
+        getTaskBtn.innerHTML = '<i class="fa-solid fa-bolt-lightning"></i> Дай задачу';
+        focusCard.classList.add('hidden');
     }
 
-    if (tasksList) {
-        tasksList.innerHTML = state.tasks.map((item, idx) => `
-            <div class="active-task">
-                <div class="flex items-center gap-3">
-                    <i class="fa-regular fa-circle text-slate-300"></i>
-                    <span class="font-medium">${item}</span>
-                </div>
-                <button onclick="finishTask(${idx})" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Готово</button>
-            </div>
-        `).join('');
-    }
-
-    if (badge) badge.textContent = state.inbox.length;
-    if (emptyState) emptyState.classList.toggle('hidden', state.inbox.length > 0);
+    badge.textContent = state.inbox.length;
+    emptyState.classList.toggle('hidden', state.inbox.length > 0 || state.currentFocus);
 }
 
-// Глобальные экшены (для onclick в строках)
-window.processToTask = (idx) => {
-    if (!state.isSmartMode) return alert("Перейдите в умный режим для обработки задач!");
-    const [item] = state.inbox.splice(idx, 1);
-    state.tasks.unshift(item);
+// Логика перемещения для Умного режима
+window.moveToWork = (idx) => {
+    const [task] = state.inbox.splice(idx, 1);
+    state.tasks.unshift(task);
     render();
-};
-
-window.finishTask = (idx) => {
-    state.tasks.splice(idx, 1);
-    render();
+    
+    // Обновляем визуализацию задач в работе
+    const tasksList = document.getElementById('tasks-list');
+    tasksList.innerHTML = state.tasks.map(t => `
+        <div class="p-3 bg-slate-50 rounded-xl mb-2 flex justify-between items-center">
+            <span class="text-sm font-medium">${t}</span>
+            <i class="fa-regular fa-circle text-slate-300"></i>
+        </div>
+    `).join('');
 };
