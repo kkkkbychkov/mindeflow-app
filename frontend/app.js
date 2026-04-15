@@ -1,217 +1,138 @@
-// ===== Конфигурация =====
+/**
+ * MindFlow Core Logic
+ * Senior Frontend Approach: State-driven UI, Default Hidden Modules
+ */
+
 const API_URL = "http://localhost:8080/api/v1";
-let isSmartMode = false;
+
+// Состояние приложения
+const state = {
+    isSmartMode: false, // Изначально выключено
+    inbox: [],
+    tasks: [],
+    userName: "UserName"
+};
 
 document.addEventListener("DOMContentLoaded", () => {
     initApp();
-    loadUserData(); 
-    initToggle();
-    applyMode();
+    loadUserData();
 });
 
-async function initApp() {
-    // 1. Находим основные элементы
-    const addMainBtn = document.getElementById('add-task-btn-main');
-    const addInboxBtn = document.getElementById('add-to-inbox-btn');
-    const inboxList = document.getElementById('inbox-list');
-    const tasksList = document.getElementById('tasks-list');
-
-    // 2. Логика добавления новых задач
-    const handleAddTask = () => {
-        const text = prompt("Опишите задачу:");
-        if (text && text.trim() !== "") {
-            addInboxItem(text);
-        }
+function initApp() {
+    // Регистрация событий
+    const actions = {
+        'add-task-btn-main': promptAddTask,
+        'add-to-inbox-btn': promptAddTask,
+        'mode-toggle': toggleSmartMode
     };
 
-    if (addMainBtn) addMainBtn.onclick = handleAddTask;
-    if (addInboxBtn) addInboxBtn.onclick = handleAddTask;
+    Object.entries(actions).forEach(([id, fn]) => {
+        const el = document.getElementById(id);
+        if (el) el.onclick = fn;
+    });
 
-    // 3. Обновление начального состояния счетчиков
-    updateUI();
+    // Устанавливаем начальную видимость
+    applyModeVisibility();
+    render();
 }
 
-// ===== Загрузка данных пользователя с бэкенда =====
 async function loadUserData() {
-    const headerTitle = document.getElementById('header-title');
     try {
-        const response = await fetch(`${API_URL}/user`);
-        if (response.ok) {
-            const data = await response.json();
-            if (headerTitle) {
-                headerTitle.textContent = `Доброго времени суток, ${data.full_name}!`;
-            }
+        const res = await fetch(`${API_URL}/user`);
+        if (res.ok) {
+            const data = await res.json();
+            state.userName = data.full_name;
         }
-    } catch (error) {
-        console.error("Ошибка загрузки пользователя:", error);
-        // Заглушка, если бэк не запущен
-        if (headerTitle) headerTitle.textContent = "Доброго времени суток, Дмитрий!";
+    } catch (e) {
+        console.log("Using fallback user data");
+    }
+    const titleEl = document.getElementById('header-title');
+    if (titleEl) titleEl.textContent = `Доброго времени суток, ${state.userName}!`;
+}
+
+function promptAddTask() {
+    const text = prompt("Опишите задачу:");
+    if (text?.trim()) {
+        state.inbox.push(text.trim());
+        render();
     }
 }
 
-// ===== Создание элемента в Inbox =====
-function addInboxItem(text) {
-    const container = document.getElementById('inbox-list');
-    if (!container) return;
-
-    const div = document.createElement("div");
-    div.className = "flex items-center justify-between py-4 border-b border-slate-100 group transition-all";
-
-    div.innerHTML = `
-        <span class="text-slate-800 font-medium text-[15px]">${text}</span>
-        <button class="action-process px-4 py-1.5 rounded-lg text-sm font-medium text-indigo-600 border border-indigo-100 bg-white hover:bg-indigo-50 transition-colors">
-            Обработать
-        </button>
-    `;
-
-    // Кнопка перемещения в Tasks
-    // div.querySelector('.action-process').onclick = () => {
-    //     div.remove();
-    //     moveToTasks(text);
-    //     updateUI();
-    // };
-    div.querySelector('.action-process').onclick = () => {
-        if (!isSmartMode) {
-            alert("🐒 В режиме обезьяны нельзя обрабатывать задачи!");
-            return;
-        }
-
-        div.remove();
-        moveToTasks(text);
-        updateUI();
-    };
-
-    container.appendChild(div);
-    updateUI();
+function toggleSmartMode() {
+    state.isSmartMode = !state.isSmartMode;
+    applyModeVisibility();
 }
 
-// ===== Перемещение в колонку Tasks =====
-function moveToTasks(text) {
-    const tasksContainer = document.getElementById('tasks-list');
-    if (!tasksContainer) return;
-
-    const div = document.createElement("div");
-    // Стиль карточки как в твоем дизайне
-    div.className = "bg-slate-50/80 rounded-xl p-3.5 flex items-center justify-between border border-slate-100 mb-2.5 transition-all hover:border-indigo-200";
-
-    div.innerHTML = `
-        <div class="flex items-center gap-3">
-            <i class="fa-regular fa-circle text-slate-300 text-lg"></i>
-            <span class="text-slate-700 font-medium text-[15px]">${text}</span>
-        </div>
-        <button class="action-done bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-600/10">
-            Готово
-        </button>
-    `;
-
-    // Кнопка "Готово" (просто удаляем задачу)
-    // div.querySelector('.action-done').onclick = () => {
-    //     div.classList.add('opacity-0', 'scale-95');
-    //     setTimeout(() => {
-    //         div.remove();
-    //         updateUI();
-    //     }, 200);
-    // };
-    div.querySelector('.action-done').onclick = () => {
-        if (!isSmartMode) {
-            alert("🐒 Сначала стань умнее 😄");
-            return;
-        }
-
-        div.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => {
-            div.remove();
-            updateUI();
-        }, 200);
-    };
-    
-
-    tasksContainer.prepend(div);
-}
-
-// ===== Обновление интерфейса (счетчики и пустые состояния) =====
-function updateUI() {
-    const inboxList = document.getElementById('inbox-list');
-    const emptyState = document.getElementById('inbox-empty-state');
-    const sidebarBadge = document.getElementById('sidebar-inbox-count');
-
-    if (inboxList && sidebarBadge) {
-        const count = inboxList.children.length;
-        sidebarBadge.textContent = count;
-        
-        if (emptyState) {
-            count === 0 ? emptyState.classList.remove('hidden') : emptyState.classList.add('hidden');
-        }
-    }
-}
-
-// ===== Переключатель "обезьяна / умный тип" =====
-function initToggle() {
+function applyModeVisibility() {
     const toggle = document.getElementById('mode-toggle');
     const circle = document.getElementById('toggle-circle');
     const icon = document.getElementById('toggle-icon');
+    
+    // Элементы, которыми управляем
+    const modules = ['nav-tasks', 'nav-projects', 'card-tasks', 'card-projects'];
 
-    isSmartMode = false;
-    circle.style.transform = "translateX(0px)";
-    toggle.classList.add("bg-slate-700");
-    toggle.classList.remove("bg-indigo-500");
-    icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
-    applyMode();
+    if (state.isSmartMode) {
+        toggle.className = "toggle-bg bg-indigo-600";
+        circle.style.transform = "translateX(24px)";
+        icon.src = "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
+    } else {
+        toggle.className = "toggle-bg bg-slate-700";
+        circle.style.transform = "translateX(0px)";
+        icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
+    }
 
-    toggle.onclick = () => {
-        isSmartMode = !isSmartMode;
+    modules.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', !state.isSmartMode);
+    });
 
-        if (isSmartMode) {
-            // вправо (умный тип)
-            circle.style.transform = "translateX(28px)";
-            toggle.classList.remove("bg-slate-700");
-            toggle.classList.add("bg-indigo-500");
-
-            icon.src = "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
-        } else {
-            // влево (обезьяна)
-            circle.style.transform = "translateX(0px)";
-            toggle.classList.remove("bg-indigo-500");
-            toggle.classList.add("bg-slate-200");
-
-            icon.src = "https://images.icon-icons.com/1446/PNG/512/22212monkey_98814.png";
-        }
-
-        applyMode();
-    };
-
-    function applyMode() {
-        const tasksList = document.getElementById('tasks-list');
-        const navTasks = document.getElementById('nav-tasks');
-        const navProjects = document.getElementById('nav-projects');
-        const cardTasks = document.getElementById('card-tasks');
-        const cardProjects = document.getElementById('card-projects');
-
-        if (!isSmartMode) {
-            // скрываем вкладки
-            if (navTasks) navTasks.style.display = "none";
-            if (navProjects) navProjects.style.display = "none";
-
-            // скрываем карточки
-            if (cardTasks) cardTasks.style.display = "none";
-            if (cardProjects) cardProjects.style.display = "none";
-
-            if (tasksList) {
-                tasksList.style.opacity = "0.4";
-                tasksList.style.pointerEvents = "none";
-            }
-
-        } else {
-            if (navTasks) navTasks.style.display = "";
-            if (navProjects) navProjects.style.display = "";
-
-            if (cardTasks) cardTasks.style.display = "";
-            if (cardProjects) cardProjects.style.display = "";
-
-            if (tasksList) {
-                tasksList.style.opacity = "1";
-                tasksList.style.pointerEvents = "auto";
-            }
-        }
+    const tasksList = document.getElementById('tasks-list');
+    if (tasksList) {
+        tasksList.style.opacity = state.isSmartMode ? "1" : "0.4";
+        tasksList.style.pointerEvents = state.isSmartMode ? "auto" : "none";
     }
 }
+
+function render() {
+    const inboxList = document.getElementById('inbox-list');
+    const tasksList = document.getElementById('tasks-list');
+    const badge = document.getElementById('sidebar-inbox-count');
+    const emptyState = document.getElementById('inbox-empty-state');
+
+    if (inboxList) {
+        inboxList.innerHTML = state.inbox.map((item, idx) => `
+            <div class="task-row">
+                <span class="font-medium">${item}</span>
+                <button onclick="processToTask(${idx})" class="btn-process">Обработать</button>
+            </div>
+        `).join('');
+    }
+
+    if (tasksList) {
+        tasksList.innerHTML = state.tasks.map((item, idx) => `
+            <div class="active-task">
+                <div class="flex items-center gap-3">
+                    <i class="fa-regular fa-circle text-slate-300"></i>
+                    <span class="font-medium">${item}</span>
+                </div>
+                <button onclick="finishTask(${idx})" class="btn-primary" style="padding: 4px 12px; font-size: 12px;">Готово</button>
+            </div>
+        `).join('');
+    }
+
+    if (badge) badge.textContent = state.inbox.length;
+    if (emptyState) emptyState.classList.toggle('hidden', state.inbox.length > 0);
+}
+
+// Глобальные экшены (для onclick в строках)
+window.processToTask = (idx) => {
+    if (!state.isSmartMode) return alert("Перейдите в умный режим для обработки задач!");
+    const [item] = state.inbox.splice(idx, 1);
+    state.tasks.unshift(item);
+    render();
+};
+
+window.finishTask = (idx) => {
+    state.tasks.splice(idx, 1);
+    render();
+};
